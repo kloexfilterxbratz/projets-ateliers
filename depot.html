@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Déposer mon projet</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 700px;
+            margin: 60px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        .formulaire {
+            border: 1px solid #ccc;
+            padding: 25px;
+            border-radius: 10px;
+        }
+
+        label {
+            display: block;
+            margin-top: 20px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        button {
+            margin-top: 25px;
+            padding: 12px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #message {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Déposer mon projet</h1>
+
+    <p>
+        Tu peux déposer ici ton projet réalisé pendant l'atelier.
+    </p>
+
+    <div class="formulaire">
+
+        <label for="pseudo">Pseudonyme ou code du projet</label>
+
+        <input
+            type="text"
+            id="pseudo"
+            name="pseudo"
+            maxlength="50"
+            placeholder="Ex. projet-07"
+            required
+        >
+
+        <label for="fichier">Projet ZIP</label>
+
+        <input
+            type="file"
+            id="fichier"
+            accept=".zip"
+            required
+        >
+
+        <button id="envoyer">
+            Envoyer mon projet
+        </button>
+
+        <div id="message"></div>
+
+    </div>
+
+    <script>
+
+        const SUPABASE_FUNCTION =
+            "https://urwltolhssartivabvut.supabase.co/functions/v1/upload-submission";
+
+        const SUPABASE_PUBLISHABLE_KEY =
+            "sb_publishable_7C6P_-oSh9GJ-Qj11dfA-Q_4jGc-wKp";
+
+        const bouton = document.getElementById("envoyer");
+        const message = document.getElementById("message");
+
+        bouton.addEventListener("click", async () => {
+
+            const pseudo = document.getElementById("pseudo").value.trim();
+            const fichier = document.getElementById("fichier").files[0];
+
+            if (!pseudo) {
+                message.textContent =
+                    "Veuillez entrer un pseudonyme ou un code de projet.";
+                return;
+            }
+
+            if (!fichier) {
+                message.textContent =
+                    "Veuillez sélectionner un fichier ZIP.";
+                return;
+            }
+
+            if (!fichier.name.toLowerCase().endsWith(".zip")) {
+                message.textContent =
+                    "Le fichier doit être au format ZIP.";
+                return;
+            }
+
+            if (fichier.size > 50 * 1024 * 1024) {
+                message.textContent =
+                    "Le fichier doit faire moins de 50 MB.";
+                return;
+            }
+
+            bouton.disabled = true;
+            message.textContent = "Préparation du dépôt...";
+
+            try {
+
+                const response = await fetch(
+                    SUPABASE_FUNCTION,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json",
+                            "apikey": SUPABASE_PUBLISHABLE_KEY
+                        },
+
+                        body: JSON.stringify({
+                            filename: fichier.name
+                        })
+                    }
+                );
+
+                const resultat = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        resultat.error ||
+                        "Impossible de préparer le dépôt."
+                    );
+                }
+
+                message.textContent =
+                    "Envoi du projet...";
+
+                const uploadResponse = await fetch(
+                    `https://urwltolhssartivabvut.supabase.co/storage/v1/object/upload/sign/soumissions/${resultat.path}?token=${resultat.token}`,
+                    {
+                        method: "PUT",
+
+                        headers: {
+                            "Content-Type": "application/zip"
+                        },
+
+                        body: fichier
+                    }
+                );
+
+                if (!uploadResponse.ok) {
+                    throw new Error(
+                        "Le fichier n'a pas pu être envoyé."
+                    );
+                }
+
+                message.textContent =
+                    "✓ Projet reçu avec succès !";
+
+                document.getElementById("pseudo").value = "";
+                document.getElementById("fichier").value = "";
+
+            } catch (erreur) {
+
+                console.error(erreur);
+
+                message.textContent =
+                    "Une erreur est survenue : " +
+                    erreur.message;
+
+            } finally {
+
+                bouton.disabled = false;
+
+            }
+
+        });
+
+    </script>
+
+</body>
+</html>
