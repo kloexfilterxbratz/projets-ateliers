@@ -178,8 +178,12 @@
 );
 
 if (!uploadResponse.ok) {
+    const details = await uploadResponse.text();
+
+    console.error("Erreur Storage :", details);
+
     throw new Error(
-        "Le fichier n'a pas pu être envoyé."
+        "Erreur Storage : " + details
     );
 }
                 message.textContent =
