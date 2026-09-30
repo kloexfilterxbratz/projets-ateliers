@@ -131,6 +131,7 @@
         const SUPABASE_PUBLISHABLE_KEY =
             "sb_publishable_7C6P_-oSh9GJ-Qj11dfA-Q_4jGc-wKp";
 
+
         const bouton =
             document.getElementById("envoyer");
 
@@ -201,8 +202,7 @@
             try {
 
                 /*
-                 * ÉTAPE 1
-                 * Créer le projet dans Supabase
+                 * 1. Créer le projet
                  */
 
                 const response = await fetch(
@@ -236,7 +236,7 @@
 
 
                 /*
-                 * Afficher le code secret
+                 * 2. Afficher le code secret
                  */
 
                 codeSecret.textContent =
@@ -246,22 +246,57 @@
                     "block";
 
 
+                /*
+                 * 3. Envoyer réellement le ZIP
+                 */
+
                 message.textContent =
-                    "Projet créé. Envoi du fichier...";
+                    "Envoi du fichier...";
+
+
+                const uploadResponse = await fetch(
+                    `https://urwltolhssartivabvut.supabase.co/storage/v1/object/upload/sign/Soumissions/${resultat.upload.path}?token=${resultat.upload.token}`,
+                    {
+                        method: "PUT",
+
+                        headers: {
+                            "Content-Type": "application/zip"
+                        },
+
+                        body: fichier
+                    }
+                );
+
+
+                if (!uploadResponse.ok) {
+
+                    const details =
+                        await uploadResponse.text();
+
+                    console.error(
+                        "Erreur Storage :",
+                        details
+                    );
+
+                    throw new Error(
+                        "Le fichier n'a pas pu être envoyé."
+                    );
+                }
 
 
                 /*
-                 * POUR L'INSTANT :
-                 * on arrête ici.
-                 *
-                 * Le téléchargement du ZIP sera
-                 * reconnecté à l'étape suivante.
+                 * 4. Tout est terminé
                  */
 
-                console.log(
-                    "Projet créé :",
-                    resultat.projet
-                );
+                message.textContent =
+                    "✓ Ton projet a été reçu avec succès !";
+
+
+                document.getElementById("pseudo").value =
+                    "";
+
+                document.getElementById("fichier").value =
+                    "";
 
 
             } catch (erreur) {
