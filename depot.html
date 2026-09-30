@@ -165,24 +165,23 @@
                     "Envoi du projet...";
 
                 const uploadResponse = await fetch(
-                    `https://urwltolhssartivabvut.supabase.co/storage/v1/object/upload/sign/soumissions/${resultat.path}?token=${resultat.token}`,
-                    {
-                        method: "PUT",
+    `https://urwltolhssartivabvut.supabase.co/storage/v1/object/upload/sign/Soumissions/${resultat.path}?token=${resultat.token}`,
+    {
+        method: "PUT",
 
-                        headers: {
-                            "Content-Type": "application/zip"
-                        },
+        headers: {
+            "Content-Type": "application/zip"
+        },
 
-                        body: fichier
-                    }
-                );
+        body: fichier
+    }
+);
 
-                if (!uploadResponse.ok) {
-                    throw new Error(
-                        "Le fichier n'a pas pu être envoyé."
-                    );
-                }
-
+if (!uploadResponse.ok) {
+    throw new Error(
+        "Le fichier n'a pas pu être envoyé."
+    );
+}
                 message.textContent =
                     "✓ Projet reçu avec succès !";
 
