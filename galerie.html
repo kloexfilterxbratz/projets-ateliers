@@ -113,9 +113,11 @@
                     );
                 }
 
+const resultat =
+    await response.json();
 
-                const projets =
-                    await response.json();
+const projets =
+    resultat.projets;
 
 
                 galerie.innerHTML = "";
