@@ -1,0 +1,121 @@
+name: Publier un projet
+
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: "Slug du projet"
+        required: true
+        type: string
+
+      download_url:
+        description: "URL temporaire du ZIP"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Télécharger le ZIP
+        env:
+          DOWNLOAD_URL: ${{ inputs.download_url }}
+        run: |
+          curl \
+            --fail \
+            --location \
+            --retry 3 \
+            "$DOWNLOAD_URL" \
+            --output projet.zip
+
+      - name: Préparer le dossier du projet
+        env:
+          SLUG: ${{ inputs.slug }}
+        run: |
+          rm -rf "projets/$SLUG"
+          mkdir -p "projets/$SLUG"
+
+      - name: Décompresser le projet
+        env:
+          SLUG: ${{ inputs.slug }}
+        run: |
+          python3 <<'PY'
+          import os
+          import zipfile
+
+          slug = os.environ["SLUG"]
+          zip_path = "projet.zip"
+          destination = os.path.join("projets", slug)
+
+          with zipfile.ZipFile(zip_path, "r") as archive:
+              for member in archive.infolist():
+                  name = member.filename.replace("\\", "/")
+
+                  if name.startswith("/"):
+                      raise RuntimeError(
+                          f"Chemin absolu interdit : {name}"
+                      )
+
+                  parts = name.split("/")
+
+                  if ".." in parts:
+                      raise RuntimeError(
+                          f"Chemin invalide : {name}"
+                      )
+
+                  cible = os.path.abspath(
+                      os.path.join(destination, name)
+                  )
+
+                  racine = os.path.abspath(destination)
+
+                  if not (
+                      cible == racine
+                      or cible.startswith(racine + os.sep)
+                  ):
+                      raise RuntimeError(
+                          f"Chemin hors du projet : {name}"
+                      )
+
+                  archive.extract(member, destination)
+
+          print(f"Projet décompressé dans {destination}")
+          PY
+
+      - name: Supprimer le ZIP temporaire
+        run: |
+          rm -f projet.zip
+
+      - name: Vérifier le projet
+        env:
+          SLUG: ${{ inputs.slug }}
+        run: |
+          if [ ! -d "projets/$SLUG" ]; then
+            echo "Le dossier du projet n'existe pas."
+            exit 1
+          fi
+
+          echo "Contenu du projet :"
+          find "projets/$SLUG" -maxdepth 3 -type f | head -100
+
+      - name: Publier les changements
+        env:
+          SLUG: ${{ inputs.slug }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add "projets/$SLUG"
+
+          git commit \
+            -m "Publier le projet $SLUG" \
+            || echo "Aucun changement à publier"
+
+          git push
