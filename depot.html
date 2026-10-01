@@ -201,75 +201,66 @@
 
             try {
 
-                /*
-                 * 1. Créer le projet
-                 */
+                              // 1. Création du projet
+                message.textContent =
+                    "Création de ton projet...";
 
-                const response = await fetch(
-                    SUPABASE_FUNCTION,
-                    {
-                        method: "POST",
+                const creationResponse =
+                    await fetch(
+                        "https://urwltolhssartivabvut.supabase.co/functions/v1/create-submission",
+                        {
+                            method: "POST",
 
-                        headers: {
-                            "Content-Type": "application/json",
-                            "apikey": SUPABASE_PUBLISHABLE_KEY
-                        },
+                            headers: {
+                                "Content-Type":
+                                    "application/json",
+                                "apikey":
+                                    SUPABASE_PUBLISHABLE_KEY
+                            },
 
-                        body: JSON.stringify({
-                            pseudonyme: pseudo
-                        })
-                    }
-                );
+                            body: JSON.stringify({
+                                pseudonyme: pseudo
+                            })
+                        }
+                    );
 
+                const creation =
+                    await creationResponse.json();
 
-                const resultat =
-                    await response.json();
-
-
-                if (!response.ok) {
-
+                if (!creationResponse.ok) {
                     throw new Error(
-                        resultat.error ||
+                        creation.error ||
                         "Impossible de créer le projet."
                     );
                 }
 
-
-                /*
-                 * 2. Afficher le code secret
-                 */
-
+                // Afficher le code secret
                 codeSecret.textContent =
-                    resultat.code_secret;
+                    creation.code_secret;
 
                 zoneCode.style.display =
                     "block";
 
-
-                /*
-                 * 3. Envoyer réellement le ZIP
-                 */
-
+                // 2. Envoi du ZIP dans Supabase
                 message.textContent =
                     "Envoi du fichier...";
 
+                const uploadResponse =
+                    await fetch(
+                        `https://urwltolhssartivabvut.supabase.co/storage/v1/object/upload/sign/Soumissions/${creation.upload.path}?token=${creation.upload.token}`,
+                        {
+                            method: "PUT",
 
-                const uploadResponse = await fetch(
-                    `https://urwltolhssartivabvut.supabase.co/storage/v1/object/upload/sign/Soumissions/${resultat.upload.path}?token=${resultat.upload.token}`,
-                    {
-                        method: "PUT",
+                            headers: {
+                                "Content-Type":
+                                    "application/zip"
+                            },
 
-                        headers: {
-                            "Content-Type": "application/zip"
-                        },
-
-                        body: fichier
-                    }
-                );
-
+                            body: fichier
+                        }
+                    );
 
                 if (!uploadResponse.ok) {
-
                     const details =
                         await uploadResponse.text();
 
@@ -283,22 +274,86 @@
                     );
                 }
 
-
-                /*
-                 * 4. Tout est terminé
-                 */
-
+                // 3. Publication automatique sur GitHub
                 message.textContent =
-                    "✓ Ton projet a été reçu avec succès !";
+                    "Publication de ton projet...";
 
+                const publicationResponse =
+                    await fetch(
+                        "https://urwltolhssartivabvut.supabase.co/functions/v1/upload-submission",
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json",
+                                "apikey":
+                                    SUPABASE_PUBLISHABLE_KEY
+                            },
+
+                      body: JSON.stringify({
+    zip_path:
+        creation.upload.path,
+
+    slug:
+        creation.projet.slug,
+
+    publication_token:
+        creation.publication_token
+})
+                        }
+                    );
+
+                const publication =
+                    await publicationResponse.json();
+
+                if (!publicationResponse.ok) {
+                    console.error(
+                        "Erreur publication :",
+                        publication
+                    );
+
+                    throw new Error(
+                        publication.error ||
+                        "Le projet a été reçu, mais sa publication a échoué."
+                    );
+                }
+
+                // 4. Succès
+                message.textContent =
+                    "✓ Ton projet a été publié avec succès !";
+
+                const lienProjet =
+                    document.createElement("a");
+
+                lienProjet.href =
+                    publication.url;
+
+                lienProjet.textContent =
+                    "Voir mon projet →";
+
+                lienProjet.target =
+                    "_blank";
+
+                lienProjet.style.display =
+                    "inline-block";
+
+                lienProjet.style.marginTop =
+                    "15px";
+
+                message.appendChild(
+                    document.createElement("br")
+                );
+
+                message.appendChild(
+                    lienProjet
+                );
 
                 document.getElementById("pseudo").value =
                     "";
 
                 document.getElementById("fichier").value =
                     "";
-
-
             } catch (erreur) {
 
                 console.error(erreur);
