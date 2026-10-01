@@ -96,20 +96,9 @@
 
             try {
 
-                const response = await fetch(
-                    `${SUPABASE_URL}/rest/v1/projets?select=pseudonyme,slug,created_at&order=created_at.desc`,
-                    {
-                        method: "GET",
-
-                        headers: {
-                            "apikey":
-                                SUPABASE_PUBLISHABLE_KEY,
-
-                            "Authorization":
-                                `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
-                        }
-                    }
-                );
+              const response = await fetch(
+    "https://urwltolhssartivabvut.supabase.co/functions/v1/liste-projets"
+);
 
 
                 if (!response.ok) {
