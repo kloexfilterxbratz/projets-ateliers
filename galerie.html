@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Galerie des projets</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        .intro {
+            margin-bottom: 30px;
+        }
+
+        #galerie {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fit, minmax(240px, 1fr));
+
+            gap: 20px;
+        }
+
+        .projet {
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            padding: 20px;
+            background: white;
+        }
+
+        .projet h2 {
+            margin-top: 0;
+            word-break: break-word;
+        }
+
+        .projet a {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 15px;
+            text-decoration: none;
+            border: 1px solid #333;
+            border-radius: 6px;
+        }
+
+        #message {
+            margin-top: 30px;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <h1>Galerie des projets</h1>
+
+    <p class="intro">
+        Découvre les projets réalisés pendant l'atelier.
+    </p>
+
+    <div id="galerie"></div>
+
+    <div id="message">
+        Chargement des projets...
+    </div>
+
+
+    <script>
+
+        const SUPABASE_URL =
+            "https://urwltolhssartivabvut.supabase.co";
+
+        const SUPABASE_PUBLISHABLE_KEY =
+            "sb_publishable_7C6P_-oSh9GJ-Qj11dfA-Q_4jGc-wKp";
+
+
+        const galerie =
+            document.getElementById("galerie");
+
+        const message =
+            document.getElementById("message");
+
+
+        async function chargerGalerie() {
+
+            try {
+
+                const response = await fetch(
+                    `${SUPABASE_URL}/rest/v1/projets?select=pseudonyme,slug,created_at&order=created_at.desc`,
+                    {
+                        method: "GET",
+
+                        headers: {
+                            "apikey":
+                                SUPABASE_PUBLISHABLE_KEY,
+
+                            "Authorization":
+                                `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
+                        }
+                    }
+                );
+
+
+                if (!response.ok) {
+
+                    const erreur =
+                        await response.text();
+
+                    console.error(erreur);
+
+                    throw new Error(
+                        "Impossible de charger les projets."
+                    );
+                }
+
+
+                const projets =
+                    await response.json();
+
+
+                galerie.innerHTML = "";
+
+
+                if (projets.length === 0) {
+
+                    message.textContent =
+                        "Aucun projet n'a encore été déposé.";
+
+                    return;
+                }
+
+
+                for (const projet of projets) {
+
+                    const carte =
+                        document.createElement("div");
+
+                    carte.className =
+                        "projet";
+
+
+                    const titre =
+                        document.createElement("h2");
+
+                    titre.textContent =
+                        projet.pseudonyme;
+
+
+                    const lien =
+                        document.createElement("a");
+
+                    lien.href =
+                        `projets/${encodeURIComponent(projet.slug)}/`;
+
+                    lien.textContent =
+                        "Voir le projet →";
+
+                    lien.target =
+                        "_blank";
+
+
+                    carte.appendChild(titre);
+
+                    carte.appendChild(lien);
+
+                    galerie.appendChild(carte);
+                }
+
+
+                message.textContent =
+                    `${projets.length} projet(s) disponible(s).`;
+
+
+            } catch (erreur) {
+
+                console.error(erreur);
+
+                message.textContent =
+                    erreur.message;
+            }
+
+        }
+
+
+        chargerGalerie();
+
+    </script>
+
+</body>
+</html>
