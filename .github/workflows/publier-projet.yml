@@ -42,6 +42,8 @@ jobs:
             --output projet.zip
 
       - name: Valider le ZIP
+        id: validation
+        continue-on-error: true
         run: |
           python3 <<'PY'
           import os
@@ -124,6 +126,35 @@ jobs:
                   f"{taille_totale / (1024 * 1024):.2f} Mo"
               )
           PY
+
+      - name: Enregistrer l'échec de validation
+        if: steps.validation.outcome == 'failure'
+        env:
+          SLUG: ${{ inputs.slug }}
+          PUBLICATION_ID: ${{ inputs.publication_id }}
+        run: |
+          mkdir -p "publication-status"
+
+          cat > "publication-status/$SLUG.json" <<EOF
+          {
+            "publication_id": "$PUBLICATION_ID",
+            "status": "error",
+            "message": "Ton fichier ZIP n'est pas valide. Il doit contenir un fichier index.html à la racine."
+          }
+          EOF
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add "publication-status/$SLUG.json"
+
+          git commit \
+            -m "Enregistrer l'échec de publication $SLUG" \
+            || echo "Aucun changement à publier"
+
+          git push
+
+          exit 1
 
       - name: Préparer le dossier du projet
         env:
@@ -217,6 +248,23 @@ jobs:
 
           echo "Contenu du projet :"
           find "projets/$SLUG" -maxdepth 3 -type f | head -100
+
+      - name: Enregistrer la réussite de publication
+        env:
+          SLUG: ${{ inputs.slug }}
+          PUBLICATION_ID: ${{ inputs.publication_id }}
+        run: |
+          mkdir -p "publication-status"
+
+          cat > "publication-status/$SLUG.json" <<EOF
+          {
+            "publication_id": "$PUBLICATION_ID",
+            "status": "success",
+            "message": "Publication terminée."
+          }
+          EOF
+
+          git add "publication-status/$SLUG.json"
 
       - name: Publier les changements
         env:
