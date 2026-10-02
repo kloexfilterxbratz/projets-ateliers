@@ -322,12 +322,13 @@
                 // 4. Succès
                 message.textContent =
                     "✓ Ton projet a été publié avec succès !";
+const lienProjet =
+    document.createElement("a");
 
-                const lienProjet =
-                    document.createElement("a");
-
-                lienProjet.href =
-                    publication.url;
+lienProjet.href =
+    "https://kloexfilterxbratz.github.io/projets-ateliers/projets/" +
+    publication.projet.slug +
+    "/";
 
                 lienProjet.textContent =
                     "Voir mon projet →";
