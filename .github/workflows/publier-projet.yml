@@ -106,10 +106,16 @@ jobs:
               f"Projet décompressé dans {destination}"
           )
           PY
-
       - name: Supprimer le ZIP temporaire
         run: |
-          rm -f projet.zip
+          rm -f projet.zip 
+
+      - name: Enregistrer l'identifiant de publication
+        env:
+          SLUG: ${{ inputs.slug }}
+          PUBLICATION_ID: ${{ inputs.publication_id }}
+        run: |
+          echo "$PUBLICATION_ID" > "projets/$SLUG/.publication-id"
 
       - name: Vérifier le projet
         env:
@@ -122,7 +128,7 @@ jobs:
 
           echo "Contenu du projet :"
           find "projets/$SLUG" -maxdepth 3 -type f | head -100
-
+      
       - name: Publier les changements
         env:
           SLUG: ${{ inputs.slug }}
