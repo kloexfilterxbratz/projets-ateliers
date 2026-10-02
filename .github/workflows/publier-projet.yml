@@ -1,4 +1,3 @@
-
 name: Publier un projet
 
 on:
@@ -41,6 +40,90 @@ jobs:
             --retry 3 \
             "$DOWNLOAD_URL" \
             --output projet.zip
+
+      - name: Valider le ZIP
+        run: |
+          python3 <<'PY'
+          import os
+          import stat
+          import zipfile
+
+          zip_path = "projet.zip"
+
+          MAX_FICHIERS = 5000
+          MAX_TAILLE_DECOMPRESSEE = 300 * 1024 * 1024
+
+          with zipfile.ZipFile(zip_path, "r") as archive:
+
+              membres = archive.infolist()
+
+              if not membres:
+                  raise RuntimeError(
+                      "Le ZIP est vide."
+                  )
+
+              if len(membres) > MAX_FICHIERS:
+                  raise RuntimeError(
+                      f"Le ZIP contient trop de fichiers : "
+                      f"{len(membres)}. "
+                      f"Maximum autorisé : {MAX_FICHIERS}."
+                  )
+
+              index_trouve = False
+              taille_totale = 0
+
+              for member in membres:
+
+                  name = member.filename.replace("\\", "/")
+
+                  if "\x00" in name:
+                      raise RuntimeError(
+                          f"Nom de fichier invalide : {name!r}"
+                      )
+
+                  if name.startswith("/"):
+                      raise RuntimeError(
+                          f"Chemin absolu interdit : {name}"
+                      )
+
+                  parts = name.split("/")
+
+                  if ".." in parts:
+                      raise RuntimeError(
+                          f"Chemin invalide : {name}"
+                      )
+
+                  if name == "index.html":
+                      index_trouve = True
+
+                  taille_totale += member.file_size
+
+                  if taille_totale > MAX_TAILLE_DECOMPRESSEE:
+                      raise RuntimeError(
+                          "La taille totale du projet une fois "
+                          "décompressé dépasse 300 Mo."
+                      )
+
+                  mode = (member.external_attr >> 16) & 0o170000
+
+                  if mode == stat.S_IFLNK:
+                      raise RuntimeError(
+                          f"Les liens symboliques sont interdits : {name}"
+                      )
+
+              if not index_trouve:
+                  raise RuntimeError(
+                      "Le ZIP doit contenir un fichier "
+                      "index.html à sa racine."
+                  )
+
+              print("Validation du ZIP réussie.")
+              print(f"Nombre de fichiers : {len(membres)}")
+              print(
+                  f"Taille décompressée : "
+                  f"{taille_totale / (1024 * 1024):.2f} Mo"
+              )
+          PY
 
       - name: Préparer le dossier du projet
         env:
@@ -106,9 +189,10 @@ jobs:
               f"Projet décompressé dans {destination}"
           )
           PY
+
       - name: Supprimer le ZIP temporaire
         run: |
-          rm -f projet.zip 
+          rm -f projet.zip
 
       - name: Enregistrer l'identifiant de publication
         env:
@@ -126,9 +210,14 @@ jobs:
             exit 1
           fi
 
+          if [ ! -f "projets/$SLUG/index.html" ]; then
+            echo "index.html est absent de la racine du projet."
+            exit 1
+          fi
+
           echo "Contenu du projet :"
           find "projets/$SLUG" -maxdepth 3 -type f | head -100
-      
+
       - name: Publier les changements
         env:
           SLUG: ${{ inputs.slug }}
@@ -152,4 +241,3 @@ jobs:
           echo "Publication terminée."
           echo "Projet : $SLUG"
           echo "Identifiant de publication : $PUBLICATION_ID"
-
