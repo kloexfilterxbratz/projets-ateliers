@@ -1,3 +1,4 @@
+
 name: Publier un projet
 
 on:
@@ -13,6 +14,11 @@ on:
         required: true
         type: string
 
+      publication_id:
+        description: "Identifiant de publication"
+        required: true
+        type: string
+
 permissions:
   contents: write
 
@@ -21,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Récupérer le dépôt
         uses: actions/checkout@v4
 
@@ -55,7 +62,9 @@ jobs:
           destination = os.path.join("projets", slug)
 
           with zipfile.ZipFile(zip_path, "r") as archive:
+
               for member in archive.infolist():
+
                   name = member.filename.replace("\\", "/")
 
                   if name.startswith("/"):
@@ -74,19 +83,28 @@ jobs:
                       os.path.join(destination, name)
                   )
 
-                  racine = os.path.abspath(destination)
+                  racine = os.path.abspath(
+                      destination
+                  )
 
                   if not (
                       cible == racine
-                      or cible.startswith(racine + os.sep)
+                      or cible.startswith(
+                          racine + os.sep
+                      )
                   ):
                       raise RuntimeError(
                           f"Chemin hors du projet : {name}"
                       )
 
-                  archive.extract(member, destination)
+                  archive.extract(
+                      member,
+                      destination
+                  )
 
-          print(f"Projet décompressé dans {destination}")
+          print(
+              f"Projet décompressé dans {destination}"
+          )
           PY
 
       - name: Supprimer le ZIP temporaire
@@ -119,3 +137,13 @@ jobs:
             || echo "Aucun changement à publier"
 
           git push
+
+      - name: Confirmer la publication
+        env:
+          SLUG: ${{ inputs.slug }}
+          PUBLICATION_ID: ${{ inputs.publication_id }}
+        run: |
+          echo "Publication terminée."
+          echo "Projet : $SLUG"
+          echo "Identifiant de publication : $PUBLICATION_ID"
+
