@@ -660,17 +660,30 @@ async function attendrePublication(
                             "Le projet a été reçu, mais sa publication a échoué."
                         );
                     }
+message.textContent =
+    "⏳ Publication de ton projet...";
 
+console.log(
+    "Publication lancée :",
+    {
+        slug: publication.projet.slug,
+        publication_id:
+            publication.publication_id
+    }
+);
 
-                    message.textContent =
-                        "⏳ Publication de ton projet...";
+const resultatPublication =
+    await attendrePublication(
+        publication.projet.slug,
+        publication.publication_id
+    );
 
+console.log(
+    "Résultat final de la publication :",
+    resultatPublication
+);
 
-                    const resultatPublication =
-                        await attendrePublication(
-                            publication.projet.slug,
-                            publication.publication_id
-                        );
+      
 
 
                     if (
