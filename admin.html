@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Administration — Atelier RA</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #f7f7f7;
+            color: #222;
+        }
+
+        h1 {
+            margin-bottom: 8px;
+        }
+
+        .intro {
+            margin-bottom: 30px;
+            color: #666;
+        }
+
+        .connexion {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        input {
+            width: 100%;
+            max-width: 500px;
+            padding: 12px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        button {
+            margin-top: 12px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .principal {
+            background: #222;
+            color: white;
+        }
+
+        #message {
+            margin-top: 15px;
+        }
+
+        .tableau {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 14px;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #eee;
+        }
+
+        .aucun {
+            padding: 30px;
+            text-align: center;
+            color: #666;
+        }
+
+        .erreur {
+            color: #b00020;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Administration</h1>
+
+    <p class="intro">
+        Gestion des projets de l’atelier de réalité augmentée.
+    </p>
+
+    <section class="connexion">
+
+        <label for="secret">
+            Secret administrateur
+        </label>
+
+        <br><br>
+
+        <input
+            id="secret"
+            type="password"
+            autocomplete="off"
+            placeholder="Entrer le secret administrateur"
+        >
+
+        <br>
+
+        <button
+            class="principal"
+            onclick="chargerProjets()"
+        >
+            Voir les projets
+        </button>
+
+        <div id="message"></div>
+
+    </section>
+
+    <section
+        id="resultats"
+        class="tableau"
+        style="display: none;"
+    >
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Pseudonyme</th>
+                    <th>Slug</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+
+            <tbody id="listeProjets"></tbody>
+
+        </table>
+
+    </section>
+
+    <script>
+
+        const URL_ADMIN =
+            "https://urwltolhssartivabvut.supabase.co/functions/v1/admin-projets";
+
+
+        async function chargerProjets() {
+
+            const secret =
+                document.getElementById("secret").value.trim();
+
+            const message =
+                document.getElementById("message");
+
+            const resultats =
+                document.getElementById("resultats");
+
+            const liste =
+                document.getElementById("listeProjets");
+
+
+            message.textContent =
+                "Chargement...";
+
+            message.className = "";
+
+            resultats.style.display = "none";
+
+            liste.innerHTML = "";
+
+
+            if (!secret) {
+
+                message.textContent =
+                    "Entre ton secret administrateur.";
+
+                message.className =
+                    "erreur";
+
+                return;
+            }
+
+
+            try {
+
+                const reponse =
+                    await fetch(
+                        URL_ADMIN,
+                        {
+                            headers: {
+                                "x-admin-secret":
+                                    secret
+                            }
+                        }
+                    );
+
+
+                const donnees =
+                    await reponse.json();
+
+
+                if (!reponse.ok) {
+
+                    throw new Error(
+                        donnees.error ||
+                        "Accès refusé."
+                    );
+                }
+
+
+                if (
+                    !donnees.success ||
+                    !Array.isArray(donnees.projets)
+                ) {
+
+                    throw new Error(
+                        "Réponse inattendue du serveur."
+                    );
+                }
+
+
+                if (
+                    donnees.projets.length === 0
+                ) {
+
+                    liste.innerHTML = `
+                        <tr>
+                            <td
+                                colspan="3"
+                                class="aucun"
+                            >
+                                Aucun projet.
+                            </td>
+                        </tr>
+                    `;
+
+                } else {
+
+                    donnees.projets.forEach(
+                        projet => {
+
+                            const ligne =
+                                document.createElement("tr");
+
+
+                            const pseudonyme =
+                                document.createElement("td");
+
+                            pseudonyme.textContent =
+                                projet.pseudonyme;
+
+
+                            const slug =
+                                document.createElement("td");
+
+                            slug.textContent =
+                                projet.slug;
+
+
+                            const date =
+                                document.createElement("td");
+
+                            date.textContent =
+                                new Date(
+                                    projet.created_at
+                                ).toLocaleString(
+                                    "fr-CA"
+                                );
+
+
+                            ligne.appendChild(
+                                pseudonyme
+                            );
+
+                            ligne.appendChild(
+                                slug
+                            );
+
+                            ligne.appendChild(
+                                date
+                            );
+
+
+                            liste.appendChild(
+                                ligne
+                            );
+
+                        }
+                    );
+                }
+
+
+                resultats.style.display =
+                    "block";
+
+                message.textContent =
+                    `${donnees.projets.length} projet(s) trouvé(s).`;
+
+            } catch (erreur) {
+
+                console.error(erreur);
+
+                message.textContent =
+                    erreur.message;
+
+                message.className =
+                    "erreur";
+            }
+        }
+
+    </script>
+
+</body>
+</html>
