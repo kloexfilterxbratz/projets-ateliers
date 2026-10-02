@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -17,6 +18,26 @@
 
         h1 {
             margin-bottom: 10px;
+        }
+
+        .intro {
+            margin-bottom: 30px;
+        }
+
+        .choix {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .choix button {
+            flex: 1;
+            margin-top: 0;
+        }
+
+        .choix button.actif {
+            background: #222;
+            color: white;
         }
 
         .formulaire {
@@ -46,6 +67,11 @@
             cursor: pointer;
         }
 
+        button:disabled {
+            cursor: wait;
+            opacity: 0.6;
+        }
+
         #message {
             margin-top: 20px;
             font-weight: bold;
@@ -64,6 +90,13 @@
             font-weight: bold;
             letter-spacing: 2px;
         }
+
+        .explication {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f7f7f7;
+            border-radius: 8px;
+        }
     </style>
 </head>
 
@@ -71,13 +104,56 @@
 
     <h1>Déposer mon projet</h1>
 
-    <p>
+    <p class="intro">
         Tu peux déposer ici ton projet réalisé pendant l'atelier.
     </p>
 
+    <div class="choix">
+
+        <button
+            id="boutonCreer"
+            class="actif"
+            type="button"
+        >
+            Créer mon projet
+        </button>
+
+        <button
+            id="boutonModifier"
+            type="button"
+        >
+            Modifier mon projet
+        </button>
+
+    </div>
+
     <div class="formulaire">
 
-        <label for="pseudo">Mon pseudonyme</label>
+        <div id="explicationCreation">
+
+            <p>
+                C'est la première fois que tu déposes ton projet ?
+                Choisis un pseudonyme et ton fichier ZIP.
+            </p>
+
+        </div>
+
+        <div
+            id="explicationModification"
+            style="display: none;"
+        >
+
+            <p>
+                Tu as déjà un projet ?
+                Entre ton pseudonyme et ton code secret pour envoyer
+                une nouvelle version.
+            </p>
+
+        </div>
+
+        <label for="pseudo">
+            Mon pseudonyme
+        </label>
 
         <input
             type="text"
@@ -87,7 +163,28 @@
             required
         >
 
-        <label for="fichier">Mon projet ZIP</label>
+        <div
+            id="zoneCodeSecret"
+            style="display: none;"
+        >
+
+            <label for="codeSecretInput">
+                Mon code secret
+            </label>
+
+            <input
+                type="text"
+                id="codeSecretInput"
+                maxlength="9"
+                placeholder="Ex. ABCD-EFGH"
+                autocomplete="off"
+            >
+
+        </div>
+
+        <label for="fichier">
+            Mon projet ZIP
+        </label>
 
         <input
             type="file"
@@ -96,7 +193,10 @@
             required
         >
 
-        <button id="envoyer">
+        <button
+            id="envoyer"
+            type="button"
+        >
             Envoyer mon projet
         </button>
 
@@ -125,12 +225,27 @@
 
     <script>
 
-        const SUPABASE_FUNCTION =
-            "https://urwltolhssartivabvut.supabase.co/functions/v1/upload-submission";
+        const SUPABASE_URL =
+            "https://urwltolhssartivabvut.supabase.co";
 
         const SUPABASE_PUBLISHABLE_KEY =
             "sb_publishable_7C6P_-oSh9GJ-Qj11dfA-Q_4jGc-wKp";
 
+
+        const boutonCreer =
+            document.getElementById("boutonCreer");
+
+        const boutonModifier =
+            document.getElementById("boutonModifier");
+
+        const zoneCodeSecret =
+            document.getElementById("zoneCodeSecret");
+
+        const explicationCreation =
+            document.getElementById("explicationCreation");
+
+        const explicationModification =
+            document.getElementById("explicationModification");
 
         const bouton =
             document.getElementById("envoyer");
@@ -144,234 +259,396 @@
         const codeSecret =
             document.getElementById("codeSecret");
 
+        let mode = "creer";
 
-        bouton.addEventListener("click", async () => {
 
-            const pseudo =
-                document.getElementById("pseudo").value.trim();
+        function choisirMode(nouveauMode) {
 
-            const fichier =
-                document.getElementById("fichier").files[0];
-
+            mode = nouveauMode;
 
             zoneCode.style.display = "none";
 
+            message.textContent = "";
 
-            if (!pseudo) {
+            if (mode === "creer") {
 
-                message.textContent =
-                    "Veuillez entrer un pseudonyme.";
+                boutonCreer.classList.add("actif");
+                boutonModifier.classList.remove("actif");
 
-                return;
-            }
+                zoneCodeSecret.style.display = "none";
 
-
-            if (!fichier) {
-
-                message.textContent =
-                    "Veuillez sélectionner un fichier ZIP.";
-
-                return;
-            }
-
-
-            if (!fichier.name.toLowerCase().endsWith(".zip")) {
-
-                message.textContent =
-                    "Le fichier doit être au format ZIP.";
-
-                return;
-            }
-
-
-            if (fichier.size > 50 * 1024 * 1024) {
-
-                message.textContent =
-                    "Le fichier doit faire moins de 50 MB.";
-
-                return;
-            }
-
-
-            bouton.disabled = true;
-
-            message.textContent =
-                "Création de ton projet...";
-
-
-            try {
-
-                              // 1. Création du projet
-                message.textContent =
-                    "Création de ton projet...";
-
-                const creationResponse =
-                    await fetch(
-                        "https://urwltolhssartivabvut.supabase.co/functions/v1/create-submission",
-                        {
-                            method: "POST",
-
-                            headers: {
-                                "Content-Type":
-                                    "application/json",
-                                "apikey":
-                                    SUPABASE_PUBLISHABLE_KEY
-                            },
-
-                            body: JSON.stringify({
-                                pseudonyme: pseudo
-                            })
-                        }
-                    );
-
-                const creation =
-                    await creationResponse.json();
-
-                if (!creationResponse.ok) {
-                    throw new Error(
-                        creation.error ||
-                        "Impossible de créer le projet."
-                    );
-                }
-
-                // Afficher le code secret
-                codeSecret.textContent =
-                    creation.code_secret;
-
-                zoneCode.style.display =
+                explicationCreation.style.display =
                     "block";
 
-                // 2. Envoi du ZIP dans Supabase
-                message.textContent =
-                    "Envoi du fichier...";
+                explicationModification.style.display =
+                    "none";
 
-                const uploadResponse =
-                    await fetch(
-                        `https://urwltolhssartivabvut.supabase.co/storage/v1/object/upload/sign/Soumissions/${creation.upload.path}?token=${creation.upload.token}`,
-                        {
-                            method: "PUT",
+                bouton.textContent =
+                    "Envoyer mon projet";
 
-                            headers: {
-                                "Content-Type":
-                                    "application/zip"
-                            },
+            } else {
 
-                            body: fichier
-                        }
-                    );
+                boutonCreer.classList.remove("actif");
+                boutonModifier.classList.add("actif");
 
-                if (!uploadResponse.ok) {
-                    const details =
-                        await uploadResponse.text();
+                zoneCodeSecret.style.display =
+                    "block";
 
-                    console.error(
-                        "Erreur Storage :",
-                        details
-                    );
+                explicationCreation.style.display =
+                    "none";
 
-                    throw new Error(
-                        "Le fichier n'a pas pu être envoyé."
-                    );
+                explicationModification.style.display =
+                    "block";
+
+                bouton.textContent =
+                    "Modifier mon projet";
+            }
+        }
+
+
+        boutonCreer.addEventListener(
+            "click",
+            () => {
+                choisirMode("creer");
+            }
+        );
+
+
+        boutonModifier.addEventListener(
+            "click",
+            () => {
+                choisirMode("modifier");
+            }
+        );
+
+
+        bouton.addEventListener(
+            "click",
+            async () => {
+
+                const pseudo =
+                    document
+                        .getElementById("pseudo")
+                        .value
+                        .trim();
+
+                const codeSecretInput =
+                    document
+                        .getElementById("codeSecretInput")
+                        .value
+                        .trim()
+                        .toUpperCase();
+
+                const fichier =
+                    document
+                        .getElementById("fichier")
+                        .files[0];
+
+
+                zoneCode.style.display =
+                    "none";
+
+
+                if (!pseudo) {
+
+                    message.textContent =
+                        "Veuillez entrer un pseudonyme.";
+
+                    return;
                 }
 
-                // 3. Publication automatique sur GitHub
-                message.textContent =
-                    "Publication de ton projet...";
 
-                const publicationResponse =
-                    await fetch(
-                        "https://urwltolhssartivabvut.supabase.co/functions/v1/upload-submission",
-                        {
-                            method: "POST",
+                if (
+                    mode === "modifier" &&
+                    !codeSecretInput
+                ) {
 
-                            headers: {
-                                "Content-Type":
-                                    "application/json",
-                                "apikey":
-                                    SUPABASE_PUBLISHABLE_KEY
-                            },
+                    message.textContent =
+                        "Veuillez entrer votre code secret.";
 
-                      body: JSON.stringify({
-    zip_path:
-        creation.upload.path,
-
-    slug:
-        creation.projet.slug,
-
-    publication_token:
-        creation.publication_token
-})
-                        }
-                    );
-
-                const publication =
-                    await publicationResponse.json();
-
-                if (!publicationResponse.ok) {
-                    console.error(
-                        "Erreur publication :",
-                        publication
-                    );
-
-                    throw new Error(
-                        publication.error ||
-                        "Le projet a été reçu, mais sa publication a échoué."
-                    );
+                    return;
                 }
 
-                // 4. Succès
-                message.textContent =
-                    "✓ Ton projet a été publié avec succès !";
-const lienProjet =
-    document.createElement("a");
 
-lienProjet.href =
-    "https://kloexfilterxbratz.github.io/projets-ateliers/projets/" +
-    publication.projet.slug +
-    "/";
+                if (!fichier) {
 
-                lienProjet.textContent =
-                    "Voir mon projet →";
+                    message.textContent =
+                        "Veuillez sélectionner un fichier ZIP.";
 
-                lienProjet.target =
-                    "_blank";
+                    return;
+                }
 
-                lienProjet.style.display =
-                    "inline-block";
 
-                lienProjet.style.marginTop =
-                    "15px";
+                if (
+                    !fichier.name
+                        .toLowerCase()
+                        .endsWith(".zip")
+                ) {
 
-                message.appendChild(
-                    document.createElement("br")
-                );
+                    message.textContent =
+                        "Le fichier doit être au format ZIP.";
 
-                message.appendChild(
-                    lienProjet
-                );
+                    return;
+                }
 
-                document.getElementById("pseudo").value =
-                    "";
 
-                document.getElementById("fichier").value =
-                    "";
-            } catch (erreur) {
+                if (
+                    fichier.size >
+                    50 * 1024 * 1024
+                ) {
 
-                console.error(erreur);
+                    message.textContent =
+                        "Le fichier doit faire moins de 50 MB.";
 
-                message.textContent =
-                    "Une erreur est survenue : " +
-                    erreur.message;
+                    return;
+                }
 
-            } finally {
 
-                bouton.disabled = false;
+                bouton.disabled = true;
+                boutonCreer.disabled = true;
+                boutonModifier.disabled = true;
+
+
+                try {
+
+                    message.textContent =
+                        mode === "creer"
+                            ? "Création de ton projet..."
+                            : "Recherche de ton projet...";
+
+
+                    const corpsCreation = {
+                        pseudonyme: pseudo,
+                        mode: mode
+                    };
+
+
+                    if (mode === "modifier") {
+
+                        corpsCreation.code_secret =
+                            codeSecretInput;
+                    }
+
+
+                    const creationResponse =
+                        await fetch(
+                            `${SUPABASE_URL}/functions/v1/create-submission`,
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json",
+
+                                    "apikey":
+                                        SUPABASE_PUBLISHABLE_KEY
+                                },
+
+                                body:
+                                    JSON.stringify(
+                                        corpsCreation
+                                    )
+                            }
+                        );
+
+
+                    const creation =
+                        await creationResponse.json();
+
+
+                    if (!creationResponse.ok) {
+
+                        throw new Error(
+                            creation.error ||
+                            "Impossible de préparer le projet."
+                        );
+                    }
+
+
+                    if (mode === "creer") {
+
+                        codeSecret.textContent =
+                            creation.code_secret;
+
+                        zoneCode.style.display =
+                            "block";
+                    }
+
+
+                    message.textContent =
+                        "Envoi du fichier...";
+
+
+                    const uploadResponse =
+                        await fetch(
+                            `${SUPABASE_URL}/storage/v1/object/upload/sign/Soumissions/${creation.upload.path}?token=${creation.upload.token}`,
+                            {
+                                method: "PUT",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/zip",
+
+                                    "x-upsert":
+                                        "true"
+                                },
+
+                                body:
+                                    fichier
+                            }
+                        );
+
+
+                    if (!uploadResponse.ok) {
+
+                        const details =
+                            await uploadResponse.text();
+
+                        console.error(
+                            "Erreur Storage :",
+                            details
+                        );
+
+                        throw new Error(
+                            "Le fichier n'a pas pu être envoyé."
+                        );
+                    }
+
+
+                    message.textContent =
+                        mode === "creer"
+                            ? "Publication de ton projet..."
+                            : "Publication de la nouvelle version...";
+
+
+                    const publicationResponse =
+                        await fetch(
+                            `${SUPABASE_URL}/functions/v1/upload-submission`,
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json",
+
+                                    "apikey":
+                                        SUPABASE_PUBLISHABLE_KEY
+                                },
+
+                                body:
+                                    JSON.stringify({
+                                        zip_path:
+                                            creation.upload.path,
+
+                                        slug:
+                                            creation.projet.slug,
+
+                                        publication_token:
+                                            creation.publication_token
+                                    })
+                            }
+                        );
+
+
+                    const publication =
+                        await publicationResponse.json();
+
+
+                    if (!publicationResponse.ok) {
+
+                        console.error(
+                            "Erreur publication :",
+                            publication
+                        );
+
+                        throw new Error(
+                            publication.error ||
+                            "Le projet a été reçu, mais sa publication a échoué."
+                        );
+                    }
+
+
+                    message.textContent =
+                        mode === "creer"
+                            ? "✓ Ton projet a été envoyé et sa publication est en cours."
+                            : "✓ Ta nouvelle version a été envoyée et sa publication est en cours.";
+
+
+                    const lienProjet =
+                        document.createElement("a");
+
+
+                    lienProjet.href =
+                        `${window.location.origin}/projets-ateliers/projets/` +
+                        publication.projet.slug +
+                        "/";
+
+
+                    lienProjet.textContent =
+                        mode === "creer"
+                            ? "Voir mon projet →"
+                            : "Voir la nouvelle version →";
+
+
+                    lienProjet.target =
+                        "_blank";
+
+
+                    lienProjet.style.display =
+                        "inline-block";
+
+                    lienProjet.style.marginTop =
+                        "15px";
+
+
+                    message.appendChild(
+                        document.createElement("br")
+                    );
+
+
+                    message.appendChild(
+                        lienProjet
+                    );
+
+
+                    document
+                        .getElementById("pseudo")
+                        .value = "";
+
+
+                    document
+                        .getElementById("fichier")
+                        .value = "";
+
+
+                    document
+                        .getElementById("codeSecretInput")
+                        .value = "";
+
+
+                } catch (erreur) {
+
+                    console.error(
+                        erreur
+                    );
+
+                    message.textContent =
+                        "Une erreur est survenue : " +
+                        erreur.message;
+
+
+                } finally {
+
+                    bouton.disabled = false;
+                    boutonCreer.disabled = false;
+                    boutonModifier.disabled = false;
+                }
 
             }
-
-        });
+        );
 
     </script>
 
 </body>
 </html>
+```
