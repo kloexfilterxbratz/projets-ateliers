@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -320,8 +321,8 @@
         ) {
 
             const url =
-                `${window.location.origin}/projets-ateliers/projets/` +
-                `${encodeURIComponent(slug)}/.publication-id`;
+                `${window.location.origin}/projets-ateliers/publication-status/` +
+                `${encodeURIComponent(slug)}.json`;
 
 
             const nombreMaxTentatives = 24;
@@ -348,18 +349,38 @@
 
                     if (reponse.ok) {
 
-                        const identifiant =
-                            (
-                                await reponse.text()
-                            ).trim();
+                        const statut =
+                            await reponse.json();
 
 
                         if (
-                            identifiant ===
+                            statut.publication_id ===
                             publicationId
                         ) {
 
-                            return true;
+                            if (
+                                statut.status ===
+                                "success"
+                            ) {
+
+                                return {
+                                    status: "success"
+                                };
+
+                            }
+
+                            if (
+                                statut.status ===
+                                "error"
+                            ) {
+
+                                return {
+                                    status: "error",
+                                    message:
+                                        statut.message ||
+                                        "Le projet n'a pas pu être publié."
+                                };
+                            }
                         }
                     }
 
@@ -381,7 +402,9 @@
             }
 
 
-            return false;
+            return {
+                status: "timeout"
+            };
         }
 
 
@@ -633,14 +656,30 @@
                         "⏳ Publication de ton projet...";
 
 
-                    const publicationTerminee =
+                    const resultatPublication =
                         await attendrePublication(
                             publication.projet.slug,
                             publication.publication_id
                         );
 
 
-                    if (!publicationTerminee) {
+                    if (
+                        resultatPublication.status ===
+                        "error"
+                    ) {
+
+                        message.textContent =
+                            "⚠️ " +
+                            resultatPublication.message;
+
+                        return;
+                    }
+
+
+                    if (
+                        resultatPublication.status ===
+                        "timeout"
+                    ) {
 
                         message.textContent =
                             "La publication prend plus de temps que prévu. " +
