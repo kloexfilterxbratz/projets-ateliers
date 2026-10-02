@@ -48,7 +48,10 @@
         }
 
         .bouton {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
             padding: 13px 20px;
             border: 1px solid #222;
             border-radius: 8px;
@@ -70,14 +73,13 @@
         }
 
         .mindar h2 {
-            margin-top: 15px;
+            margin-top: 0;
         }
 
         .mindar-logo {
-            width: 180px;
-            max-width: 80%;
-            height: auto;
-            margin-bottom: 15px;
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
         }
     </style>
 </head>
@@ -95,12 +97,6 @@
 
     <div class="mindar">
 
-        <img
-            src="mindar-studio-logo.png"
-            alt="MindAR Studio"
-            class="mindar-logo"
-        >
-
         <h2>Créer ton projet</h2>
 
         <p>
@@ -117,7 +113,12 @@
                 target="_blank"
                 rel="noopener noreferrer"
             >
-                ✨ Ouvrir MindAR Studio
+                <img
+                    src="mindar-studio-logo.png"
+                    alt=""
+                    class="mindar-logo"
+                >
+                Ouvrir MindAR Studio
             </a>
 
             <a
