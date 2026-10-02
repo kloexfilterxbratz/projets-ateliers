@@ -314,98 +314,108 @@
             }
         );
 
+async function attendrePublication(
+    slug,
+    publicationId
+) {
 
-        async function attendrePublication(
-            slug,
-            publicationId
-        ) {
+    const url =
+        `${window.location.origin}/projets-ateliers/publication-status/` +
+        `${encodeURIComponent(slug)}.json`;
 
-            const url =
-                `${window.location.origin}/projets-ateliers/publication-status/` +
-                `${encodeURIComponent(slug)}.json`;
+    const nombreMaxTentatives = 24;
+    const delaiEntreTentatives = 5000;
 
+    for (
+        let tentative = 1;
+        tentative <= nombreMaxTentatives;
+        tentative++
+    ) {
 
-            const nombreMaxTentatives = 24;
+        try {
 
-            const delaiEntreTentatives = 5000;
+            const reponse =
+                await fetch(
+                    `${url}?t=${Date.now()}`,
+                    {
+                        cache: "no-store"
+                    }
+                );
 
+            if (reponse.ok) {
 
-            for (
-                let tentative = 1;
-                tentative <= nombreMaxTentatives;
-                tentative++
-            ) {
+                const statut =
+                    await reponse.json();
 
-                try {
+                console.log(
+                    "Statut de publication :",
+                    statut
+                );
 
-                    const reponse =
-                        await fetch(
-                            `${url}?t=${Date.now()}`,
-                            {
-                                cache: "no-store"
-                            }
-                        );
+                /*
+                 * On vérifie que le statut correspond
+                 * bien à cette publication.
+                 */
+                if (
+                    statut.publication_id ===
+                    publicationId
+                ) {
 
+                    /*
+                     * Publication réussie
+                     */
+                    if (
+                        statut.status ===
+                        "success"
+                    ) {
 
-                    if (reponse.ok) {
-
-                        const statut =
-                            await reponse.json();
-
-
-                        if (
-                            statut.publication_id ===
-                            publicationId
-                        ) {
-
-                            if (
-                                statut.status ===
-                                "success"
-                            ) {
-
-                                return {
-                                    status: "success"
-                                };
-
-                            }
-
-                            if (
-                                statut.status ===
-                                "error"
-                            ) {
-
-                                return {
-                                    status: "error",
-                                    message:
-                                        statut.message ||
-                                        "Le projet n'a pas pu être publié."
-                                };
-                            }
-                        }
+                        return {
+                            status: "success"
+                        };
                     }
 
-                } catch (erreur) {
+                    /*
+                     * Publication échouée
+                     */
+                    if (
+                        statut.status ===
+                        "error"
+                    ) {
 
-                    console.log(
-                        "Publication encore en attente..."
-                    );
+                        return {
+                            status: "error",
+                            message:
+                                statut.message ||
+                                "Le projet n'a pas pu être publié."
+                        };
+                    }
                 }
-
-
-                await new Promise(
-                    (resolve) =>
-                        setTimeout(
-                            resolve,
-                            delaiEntreTentatives
-                        )
-                );
             }
 
+        } catch (erreur) {
 
-            return {
-                status: "timeout"
-            };
+            console.log(
+                "Publication encore en attente..."
+            );
         }
+
+        /*
+         * Attendre 5 secondes avant
+         * la prochaine vérification.
+         */
+        await new Promise(
+            (resolve) =>
+                setTimeout(
+                    resolve,
+                    delaiEntreTentatives
+                )
+        );
+    }
+
+    return {
+        status: "timeout"
+    };
+}
 
 
         bouton.addEventListener(
