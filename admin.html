@@ -56,6 +56,20 @@
             color: white;
         }
 
+        .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .telecharger {
+            background: #087f23;
+            color: white;
+            margin-top: 0;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+
         .supprimer {
             background: #b00020;
             color: white;
@@ -64,6 +78,7 @@
             font-size: 14px;
         }
 
+        .telecharger:hover,
         .supprimer:hover {
             opacity: 0.85;
         }
@@ -126,6 +141,10 @@
 
             .colonne-date {
                 display: none;
+            }
+
+            .actions {
+                flex-direction: column;
             }
         }
     </style>
@@ -197,6 +216,9 @@
 
         const URL_SUPPRESSION =
             "https://urwltolhssartivabvut.supabase.co/functions/v1/admin-supprimer";
+
+        const URL_TELECHARGEMENT =
+            "https://urwltolhssartivabvut.supabase.co/functions/v1/admin-telecharger";
 
 
         async function chargerProjets() {
@@ -330,29 +352,68 @@
                                 document.createElement("td");
 
 
-                            const bouton =
+                            const actions =
+                                document.createElement("div");
+
+                            actions.className =
+                                "actions";
+
+
+                            // Bouton télécharger
+
+                            const boutonTelecharger =
                                 document.createElement(
                                     "button"
                                 );
 
-                            bouton.className =
+                            boutonTelecharger.className =
+                                "telecharger";
+
+                            boutonTelecharger.textContent =
+                                "⬇️ Télécharger";
+
+
+                            boutonTelecharger.onclick =
+                                () =>
+                                    telechargerProjet(
+                                        projet.slug,
+                                        boutonTelecharger
+                                    );
+
+
+                            // Bouton supprimer
+
+                            const boutonSupprimer =
+                                document.createElement(
+                                    "button"
+                                );
+
+                            boutonSupprimer.className =
                                 "supprimer";
 
-                            bouton.textContent =
+                            boutonSupprimer.textContent =
                                 "🗑️ Supprimer";
 
 
-                            bouton.onclick =
+                            boutonSupprimer.onclick =
                                 () =>
                                     supprimerProjet(
                                         projet.slug,
                                         projet.pseudonyme,
-                                        bouton
+                                        boutonSupprimer
                                     );
 
 
+                            actions.appendChild(
+                                boutonTelecharger
+                            );
+
+                            actions.appendChild(
+                                boutonSupprimer
+                            );
+
                             action.appendChild(
-                                bouton
+                                actions
                             );
 
 
@@ -397,6 +458,139 @@
 
                 message.className =
                     "erreur";
+            }
+        }
+
+
+        async function telechargerProjet(
+            slug,
+            bouton
+        ) {
+
+            const secret =
+                document.getElementById("secret").value.trim();
+
+            const message =
+                document.getElementById("message");
+
+
+            if (!secret) {
+
+                message.textContent =
+                    "Entre ton secret administrateur.";
+
+                message.className =
+                    "erreur";
+
+                return;
+            }
+
+
+            bouton.disabled = true;
+
+            bouton.textContent =
+                "Téléchargement...";
+
+            message.className = "";
+
+            message.textContent =
+                `Préparation du téléchargement de ${slug}...`;
+
+
+            try {
+
+                const reponse =
+                    await fetch(
+                        URL_TELECHARGEMENT,
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json",
+
+                                "x-admin-secret":
+                                    secret
+                            },
+
+                            body: JSON.stringify({
+                                slug: slug
+                            })
+                        }
+                    );
+
+
+                const donnees =
+                    await reponse.json();
+
+
+                if (!reponse.ok) {
+
+                    throw new Error(
+                        donnees.error ||
+                        "Impossible de préparer le téléchargement."
+                    );
+                }
+
+
+                if (
+                    !donnees.success ||
+                    !donnees.download_url
+                ) {
+
+                    throw new Error(
+                        "Le lien de téléchargement n'a pas été généré."
+                    );
+                }
+
+
+                const url =
+                    donnees.download_url.startsWith("http")
+                        ? donnees.download_url
+                        : `https://urwltolhssartivabvut.supabase.co/storage/v1${donnees.download_url}`;
+
+
+                const lien =
+                    document.createElement("a");
+
+                lien.href =
+                    url;
+
+                lien.download =
+                    `${slug}.zip`;
+
+                document.body.appendChild(
+                    lien
+                );
+
+                lien.click();
+
+                lien.remove();
+
+
+                message.textContent =
+                    `✓ Téléchargement de ${slug} lancé.`;
+
+                message.className =
+                    "succes";
+
+
+            } catch (erreur) {
+
+                console.error(erreur);
+
+                message.textContent =
+                    "⚠️ " + erreur.message;
+
+                message.className =
+                    "erreur";
+
+            } finally {
+
+                bouton.disabled = false;
+
+                bouton.textContent =
+                    "⬇️ Télécharger";
             }
         }
 
