@@ -56,6 +56,23 @@
             color: white;
         }
 
+        .supprimer {
+            background: #b00020;
+            color: white;
+            margin-top: 0;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+
+        .supprimer:hover {
+            opacity: 0.85;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: wait;
+        }
+
         #message {
             margin-top: 15px;
         }
@@ -90,6 +107,26 @@
 
         .erreur {
             color: #b00020;
+        }
+
+        .succes {
+            color: #087f23;
+        }
+
+        @media (max-width: 700px) {
+
+            table {
+                font-size: 14px;
+            }
+
+            th,
+            td {
+                padding: 10px 8px;
+            }
+
+            .colonne-date {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -142,7 +179,8 @@
                 <tr>
                     <th>Pseudonyme</th>
                     <th>Slug</th>
-                    <th>Date</th>
+                    <th class="colonne-date">Date</th>
+                    <th>Action</th>
                 </tr>
             </thead>
 
@@ -156,6 +194,9 @@
 
         const URL_ADMIN =
             "https://urwltolhssartivabvut.supabase.co/functions/v1/admin-projets";
+
+        const URL_SUPPRESSION =
+            "https://urwltolhssartivabvut.supabase.co/functions/v1/admin-supprimer";
 
 
         async function chargerProjets() {
@@ -240,7 +281,7 @@
                     liste.innerHTML = `
                         <tr>
                             <td
-                                colspan="3"
+                                colspan="4"
                                 class="aucun"
                             >
                                 Aucun projet.
@@ -274,12 +315,45 @@
                             const date =
                                 document.createElement("td");
 
+                            date.className =
+                                "colonne-date";
+
                             date.textContent =
                                 new Date(
                                     projet.created_at
                                 ).toLocaleString(
                                     "fr-CA"
                                 );
+
+
+                            const action =
+                                document.createElement("td");
+
+
+                            const bouton =
+                                document.createElement(
+                                    "button"
+                                );
+
+                            bouton.className =
+                                "supprimer";
+
+                            bouton.textContent =
+                                "🗑️ Supprimer";
+
+
+                            bouton.onclick =
+                                () =>
+                                    supprimerProjet(
+                                        projet.slug,
+                                        projet.pseudonyme,
+                                        bouton
+                                    );
+
+
+                            action.appendChild(
+                                bouton
+                            );
 
 
                             ligne.appendChild(
@@ -292,6 +366,10 @@
 
                             ligne.appendChild(
                                 date
+                            );
+
+                            ligne.appendChild(
+                                action
                             );
 
 
@@ -319,6 +397,133 @@
 
                 message.className =
                     "erreur";
+            }
+        }
+
+
+        async function supprimerProjet(
+            slug,
+            pseudonyme,
+            bouton
+        ) {
+
+            const secret =
+                document.getElementById("secret").value.trim();
+
+            const message =
+                document.getElementById("message");
+
+
+            if (!secret) {
+
+                message.textContent =
+                    "Entre ton secret administrateur.";
+
+                message.className =
+                    "erreur";
+
+                return;
+            }
+
+
+            const confirmation =
+                confirm(
+                    `Supprimer le projet "${pseudonyme}" (${slug}) ?\n\n` +
+                    "Cette action supprimera le projet de Supabase " +
+                    "et de GitHub.\n\n" +
+                    "Cette action est irréversible."
+                );
+
+
+            if (!confirmation) {
+                return;
+            }
+
+
+            bouton.disabled = true;
+
+            bouton.textContent =
+                "Suppression...";
+
+            message.className = "";
+
+            message.textContent =
+                `Suppression de ${slug} en cours...`;
+
+
+            try {
+
+                const reponse =
+                    await fetch(
+                        URL_SUPPRESSION,
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json",
+
+                                "x-admin-secret":
+                                    secret
+                            },
+
+                            body: JSON.stringify({
+                                slug: slug
+                            })
+                        }
+                    );
+
+
+                const donnees =
+                    await reponse.json();
+
+
+                if (!reponse.ok) {
+
+                    throw new Error(
+                        donnees.error ||
+                        "Impossible de supprimer le projet."
+                    );
+                }
+
+
+                if (!donnees.success) {
+
+                    throw new Error(
+                        "La suppression n'a pas été confirmée."
+                    );
+                }
+
+
+                message.textContent =
+                    `✓ ${slug} a été supprimé.`;
+
+                message.className =
+                    "succes";
+
+
+                const ligne =
+                    bouton.closest("tr");
+
+                if (ligne) {
+                    ligne.remove();
+                }
+
+
+            } catch (erreur) {
+
+                console.error(erreur);
+
+                message.textContent =
+                    "⚠️ " + erreur.message;
+
+                message.className =
+                    "erreur";
+
+                bouton.disabled = false;
+
+                bouton.textContent =
+                    "🗑️ Supprimer";
             }
         }
 
