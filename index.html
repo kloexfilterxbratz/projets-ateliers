@@ -7,36 +7,62 @@
 
     <title>Atelier de réalité augmentée</title>
 
+    <!-- Police accessible -->
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap"
+        rel="stylesheet"
+    >
+
     <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: "Atkinson Hyperlegible", Arial, sans-serif;
             max-width: 900px;
             margin: 0 auto;
             padding: 40px 20px;
             line-height: 1.6;
-            background: #f7f7f7;
-            color: #222;
+            background: #000000;
+            color: #39ff88;
         }
 
         main {
-            background: white;
+            background: #000000;
             padding: 40px;
+            border: 1px solid #39ff88;
             border-radius: 16px;
             text-align: center;
         }
 
         h1 {
             margin-top: 0;
-            font-size: 2.2rem;
+            font-size: 2.4rem;
+            line-height: 1.2;
         }
 
         h2 {
             margin-top: 35px;
+            line-height: 1.3;
         }
 
         .description {
             max-width: 650px;
             margin: 0 auto 30px;
+            font-size: 1.1rem;
         }
 
         .boutons {
@@ -53,22 +79,28 @@
             justify-content: center;
             gap: 10px;
             padding: 13px 20px;
-            border: 1px solid #222;
+            border: 2px solid #39ff88;
             border-radius: 8px;
             text-decoration: none;
-            color: #222;
-            background: white;
+            color: #39ff88;
+            background: #000000;
             font-weight: bold;
+            font-size: 1rem;
+            transition:
+                background-color 0.2s ease,
+                color 0.2s ease;
         }
 
-        .bouton:hover {
-            background: #eeeeee;
+        .bouton:hover,
+        .bouton:focus {
+            background: #39ff88;
+            color: #000000;
         }
 
         .mindar {
             margin-top: 40px;
             padding: 25px;
-            border: 1px solid #ddd;
+            border: 1px solid #39ff88;
             border-radius: 12px;
         }
 
@@ -85,29 +117,30 @@
         .administration {
             margin-top: 50px;
             padding-top: 20px;
-            border-top: 1px solid #ddd;
+            border-top: 1px solid #39ff88;
         }
 
         .bouton-admin {
             font-size: 14px;
             font-weight: normal;
-            color: #666;
-            border-color: #ccc;
+            color: #9affc0;
+            border-color: #9affc0;
         }
 
-        .bouton-admin:hover {
-            color: #222;
-            background: #eeeeee;
+        .bouton-admin:hover,
+        .bouton-admin:focus {
+            background: #9affc0;
+            color: #000000;
         }
 
         .pied-page {
             margin-top: 40px;
             padding-top: 20px;
-            border-top: 1px solid #ddd;
+            border-top: 1px solid #39ff88;
             text-align: center;
             font-size: 13px;
             line-height: 1.5;
-            color: #777;
+            color: #9affc0;
         }
 
         .pied-page p {
@@ -115,8 +148,43 @@
         }
 
         .pied-page a {
-            color: #666;
+            color: #39ff88;
         }
+
+        .pied-page a:hover,
+        .pied-page a:focus {
+            color: #ffffff;
+        }
+
+        /* Accessibilité : indicateur de navigation au clavier */
+        a:focus-visible {
+            outline: 3px solid #ffffff;
+            outline-offset: 4px;
+        }
+
+        @media (max-width: 700px) {
+
+            body {
+                padding: 20px 12px;
+            }
+
+            main {
+                padding: 25px 18px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .boutons {
+                flex-direction: column;
+            }
+
+            .bouton {
+                width: 100%;
+            }
+        }
+
     </style>
 </head>
 
