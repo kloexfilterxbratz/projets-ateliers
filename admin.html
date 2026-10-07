@@ -419,7 +419,7 @@ boutonRenommer.addEventListener("click", async () => {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-               "Authorization": `Bearer ${secret.value.trim()}`
+              "x-admin-secret": secret.value.trim()
             },
             body: JSON.stringify({
                 id: projet.id,
