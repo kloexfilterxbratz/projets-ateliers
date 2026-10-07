@@ -392,6 +392,52 @@ nomProjet.textContent = projet.nom_projet || projet.pseudonyme;
                     "click",
                     () => telechargerProjet(projet.slug)
                 );
+                const boutonRenommer = document.createElement("button");
+boutonRenommer.textContent = "Renommer";
+boutonRenommer.className = "bouton-renommer";
+
+boutonRenommer.addEventListener("click", async () => {
+    const nouveauNom = prompt(
+        "Nouveau nom du projet :",
+        projet.nom_projet || projet.pseudonyme
+    );
+
+    if (nouveauNom === null) {
+        return;
+    }
+
+    const nom = nouveauNom.trim();
+
+    if (!nom) {
+        alert("Le nom du projet ne peut pas être vide.");
+        return;
+    }
+
+    const reponse = await fetch(
+        "https://urwltolhssartivabvut.supabase.co/functions/v1/admin-renommer-projet",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+               "Authorization": `Bearer ${secret.value.trim()}`
+            },
+            body: JSON.stringify({
+                id: projet.id,
+                nom_projet: nom
+            })
+        }
+    );
+
+    const resultat = await reponse.json();
+
+    if (!reponse.ok) {
+        alert(resultat.error || "Impossible de renommer le projet.");
+        return;
+    }
+
+    alert("Le projet a été renommé.");
+    chargerProjets();
+});
 
                 const boutonSupprimer =
                     document.createElement("button");
@@ -408,8 +454,9 @@ nomProjet.textContent = projet.nom_projet || projet.pseudonyme;
                     )
                 );
 
-                actions.appendChild(boutonTelecharger);
-                actions.appendChild(boutonSupprimer);
+             actions.appendChild(boutonTelecharger);
+actions.appendChild(boutonRenommer);
+actions.appendChild(boutonSupprimer);
 
                 ligne.appendChild(pseudonyme);
 ligne.appendChild(nomProjet);
