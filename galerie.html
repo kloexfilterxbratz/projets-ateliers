@@ -195,7 +195,8 @@
                     lien.rel = "noopener noreferrer";
 
                     const titre = document.createElement("h2");
-                    titre.textContent = projet.pseudonyme;
+                    titre.textContent =
+    projet.nom_projet || projet.pseudonyme;
 
                     const description = document.createElement("p");
                     description.textContent = "Voir le projet →";
