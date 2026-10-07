@@ -347,14 +347,15 @@
             tableau.className = "tableau";
 
             tableau.innerHTML = `
-                <thead>
-                    <tr>
-                        <th>Pseudonyme</th>
-                        <th>Slug</th>
-                        <th>Date</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
+            <thead>
+    <tr>
+        <th>Pseudonyme</th>
+        <th>Nom du projet</th>
+        <th>Slug</th>
+        <th>Date</th>
+        <th>Actions</th>
+    </tr>
+</thead>
                 <tbody></tbody>
             `;
 
@@ -366,7 +367,10 @@
 
                 const pseudonyme = document.createElement("td");
                 pseudonyme.textContent = projet.pseudonyme;
-
+                
+const nomProjet = document.createElement("td");
+nomProjet.textContent = projet.nom_projet || projet.pseudonyme;
+                
                 const slug = document.createElement("td");
                 slug.textContent = projet.slug;
 
@@ -408,9 +412,10 @@
                 actions.appendChild(boutonSupprimer);
 
                 ligne.appendChild(pseudonyme);
-                ligne.appendChild(slug);
-                ligne.appendChild(date);
-                ligne.appendChild(actions);
+ligne.appendChild(nomProjet);
+ligne.appendChild(slug);
+ligne.appendChild(date);
+ligne.appendChild(actions);
 
                 tbody.appendChild(ligne);
             });
