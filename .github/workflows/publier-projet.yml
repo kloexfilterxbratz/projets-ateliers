@@ -391,7 +391,7 @@ jobs:
           )
 
           print("Écran de chargement personnalisé ajouté.")
-          print("Modèle utilisé : " + MODEL_PATH if False else "Modèle : " + MODEL_PATH)
+                  print("Modèle : ../../modeles/oeil_mirror.glb")
           PY
 
       - name: Supprimer le ZIP temporaire
