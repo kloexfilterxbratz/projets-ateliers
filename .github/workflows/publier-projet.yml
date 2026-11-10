@@ -391,7 +391,7 @@ jobs:
           )
 
           print("Écran de chargement personnalisé ajouté.")
-                  print("Modèle : ../../modeles/oeil_mirror.glb")
+          print("Modèle : ../../modeles/oeil_mirror.glb")
           PY
 
       - name: Supprimer le ZIP temporaire
