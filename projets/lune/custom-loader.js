@@ -20,7 +20,6 @@
         exposure="1"
         shadow-intensity="0.4">
       </model-viewer>
-      <div class="loader-caption">Chargement du filtre…</div>
     `;
     document.body.appendChild(overlay);
 

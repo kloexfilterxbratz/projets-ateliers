@@ -23,8 +23,3 @@
   background: transparent;
   --poster-color: transparent;
 }
-#custom-mindar-loader .loader-caption {
-  margin-top: 12px;
-  font-size: 12px;
-  text-transform: uppercase;
-}
