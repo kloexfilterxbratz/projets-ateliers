@@ -221,6 +221,179 @@ jobs:
           )
           PY
 
+      - name: Ajouter le nouvel écran de chargement
+        env:
+          SLUG: ${{ inputs.slug }}
+        run: |
+          python3 <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          slug = os.environ["SLUG"]
+          dossier = Path("projets") / slug
+          index = dossier / "index.html"
+
+          if not index.exists():
+              raise RuntimeError("index.html introuvable.")
+
+          html = index.read_text(encoding="utf-8")
+
+          # Ajouter le fichier JavaScript une seule fois
+          script_tag = '<script defer src="./custom-loader.js"></script>'
+
+          if "custom-loader.js" not in html:
+              html = html.replace("</head>", script_tag + "</head>")
+
+          # Trouver le fichier CSS du projet
+          match = re.search(
+              r'<link[^>]+href="([^"]+\.css)"',
+              html
+          )
+
+          if not match:
+              raise RuntimeError("Fichier CSS introuvable.")
+
+          css_path = dossier / match.group(1).replace("./", "", 1)
+
+          if not css_path.exists():
+              raise RuntimeError("Fichier CSS introuvable : " + str(css_path))
+
+          css = css_path.read_text(encoding="utf-8")
+
+          # Ajouter les styles sans créer de doublons
+          marker = "/* CUSTOM MINDAR LOADER */"
+          css = re.sub(
+              r'/\* CUSTOM MINDAR LOADER \*/.*?/\* END CUSTOM MINDAR LOADER \*/',
+              '',
+              css,
+              flags=re.S
+          )
+
+          css += """
+          /* CUSTOM MINDAR LOADER */
+          #mindar-loading {
+            visibility: hidden !important;
+          }
+
+          #custom-mindar-loader {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.94);
+            pointer-events: none;
+          }
+
+          #custom-mindar-loader.visible {
+            display: flex;
+          }
+
+          #custom-mindar-loader model-viewer {
+            width: min(58vw, 280px);
+            height: min(58vw, 280px);
+            background: transparent;
+            --poster-color: transparent;
+          }
+          /* END CUSTOM MINDAR LOADER */
+          """
+
+          css_path.write_text(css, encoding="utf-8")
+          index.write_text(html, encoding="utf-8")
+
+          # Créer le JavaScript de l'écran personnalisé
+          loader = r'''
+          (() => {
+            const MODEL_PATH = "../../modeles/oeil_mirror.glb";
+            const LOADER_ID = "custom-mindar-loader";
+
+            function installLoader() {
+              if (document.getElementById(LOADER_ID)) return;
+
+              const overlay = document.createElement("div");
+              overlay.id = LOADER_ID;
+
+              overlay.innerHTML = `
+                <model-viewer
+                  src="${MODEL_PATH}"
+                  alt="Œil en trois dimensions"
+                  auto-rotate
+                  rotation-per-second="18deg"
+                  interaction-prompt="none"
+                  disable-zoom
+                  camera-controls
+                  exposure="1"
+                  shadow-intensity="0.4">
+                </model-viewer>
+              `;
+
+              document.body.appendChild(overlay);
+
+              const update = () => {
+                const mindarLoader =
+                  document.getElementById("mindar-loading");
+
+                const isLoading =
+                  !!mindarLoader &&
+                  !mindarLoader.classList.contains("hidden");
+
+                overlay.classList.toggle("visible", isLoading);
+              };
+
+              const observer = new MutationObserver(update);
+
+              observer.observe(document.body, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ["class"]
+              });
+
+              update();
+            }
+
+            function loadModelViewer() {
+              if (customElements.get("model-viewer")) {
+                installLoader();
+                return;
+              }
+
+              const script = document.createElement("script");
+              script.type = "module";
+              script.src =
+                "https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js";
+
+              script.onload = installLoader;
+
+              script.onerror = () =>
+                console.error("Impossible de charger le visualiseur 3D.");
+
+              document.head.appendChild(script);
+            }
+
+            if (document.readyState === "loading") {
+              document.addEventListener(
+                "DOMContentLoaded",
+                loadModelViewer,
+                { once: true }
+              );
+            } else {
+              loadModelViewer();
+            }
+          })();
+          '''
+
+          (dossier / "custom-loader.js").write_text(
+              loader.strip() + "\n",
+              encoding="utf-8"
+          )
+
+          print("Écran de chargement personnalisé ajouté.")
+          print("Modèle utilisé : " + MODEL_PATH if False else "Modèle : " + MODEL_PATH)
+          PY
+
       - name: Supprimer le ZIP temporaire
         run: |
           rm -f projet.zip
