@@ -1,37 +1,19 @@
 (() => {
-  const MODEL_PATH = "../../modeles/oeil_mirror.glb";
   const LOADER_ID = "custom-mindar-loader";
 
   function installLoader() {
-    if (document.getElementById(LOADER_ID)) return;
+    const overlay = document.getElementById(LOADER_ID);
 
-    // Créer immédiatement le nouvel écran
-    const overlay = document.createElement("div");
-    overlay.id = LOADER_ID;
+    if (!overlay) return;
 
-    overlay.innerHTML = `
-      <model-viewer
-        src="${MODEL_PATH}"
-        alt="Œil en trois dimensions"
-        auto-rotate
-        rotation-per-second="18deg"
-        interaction-prompt="none"
-        disable-zoom
-        camera-controls
-        exposure="1"
-        shadow-intensity="0.4">
-      </model-viewer>
-    `;
-
-    document.body.appendChild(overlay);
-
-    // Surveiller l'état du chargement MindAR
     const update = () => {
       const mindarLoader =
         document.getElementById("mindar-loading");
 
+      // Garder l'écran noir tant que MindAR
+      // n'a pas encore créé son écran de chargement.
       const isLoading =
-        !!mindarLoader &&
+        !mindarLoader ||
         !mindarLoader.classList.contains("hidden");
 
       overlay.classList.toggle("visible", isLoading);
@@ -48,19 +30,14 @@
 
     update();
 
-    // Charger le visualiseur 3D indépendamment
-    if (customElements.get("model-viewer")) return;
+    if (!customElements.get("model-viewer")) {
+      const script = document.createElement("script");
+      script.type = "module";
+      script.src =
+        "https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js";
 
-    const script = document.createElement("script");
-    script.type = "module";
-    script.src =
-      "https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js";
-
-    script.onerror = () => {
-      console.error("Impossible de charger le visualiseur 3D.");
-    };
-
-    document.head.appendChild(script);
+      document.head.appendChild(script);
+    }
   }
 
   if (document.readyState === "loading") {
