@@ -1,4 +1,4 @@
-```javascript
+
 (() => {
   const LOADER_ID = "custom-mindar-loader";
 
